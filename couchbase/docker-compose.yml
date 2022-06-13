@@ -1,0 +1,28 @@
+
+couchbase1:
+  image: couchbase/server:community-aarch64
+  volumes:
+    - ~/couchbase/node1:/opt/couchbase/var
+  # networks:
+  #   - proxynet
+couchbase2:
+  image: couchbase/server:community-aarch64
+  volumes:
+    - ~/couchbase/node2:/opt/couchbase/var
+  # networks:
+  #   - proxynet
+couchbase3:
+  image: couchbase/server:community-aarch64
+  volumes:
+    - ~/couchbase/node3:/opt/couchbase/var
+  ports:
+    - 8091-8097:8091-8097
+    - 9140:9140
+    - 11207:11207 
+    - 18091-18097:18091-18097
+    - 11210:11210
+  # networks:
+  #   - proxynet
+# networks:
+#   proxynet:
+#     name: custom_network

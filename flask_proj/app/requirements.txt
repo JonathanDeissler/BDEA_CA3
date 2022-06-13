@@ -1,0 +1,10 @@
+Flask~=2.1.2
+flask_restx==0.5.1
+attrs>=19.3.0
+requests==2.27.1
+pytest==7.1.2
+python-dotenv==0.20.0
+bcrypt==3.2.2
+couchbase==4.0.0
+six==1.16.0
+Werkzeug==2.1.2
