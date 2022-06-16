@@ -120,7 +120,6 @@ def txt_import(filename):
 @app.route('/query_top_100')
 def query_top_100():
     query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 10"
-
     val = lookup_query(cluster, query)
     return val
 
