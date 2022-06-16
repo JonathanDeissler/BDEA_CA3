@@ -140,6 +140,24 @@ def query_custom():
     val = lookup_query(cluster, query)
     return val   
 
+@app.route('/contains_word')
+def contains_word():
+    query = request.args.get("words")
+    querystring = "select * from Tweets._default.posts where content LIKE"
+    searchwords = query.split(" ")
+    for i in range (len(searchwords)):
+        if i == 0:
+            querystring = querystring +  " \"%"+searchwords[i]+'%\"' 
+        else:
+            querystring = querystring + " AND content LIKE" + " \"%"+searchwords[i]+'%\"' 
+
+    querystring = querystring + " order by TO_NUMBER(number_of_likes) desc limit 25"
+    val = lookup_query(cluster, querystring)
+
+    return val   
+    
+  
+
 @app.route('/create_index_user')
 def create_index_user():
     qstr= "CREATE PRIMARY INDEX `#primary` ON Tweets._default.new_accounts USING GSI;"
