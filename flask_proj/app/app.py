@@ -92,7 +92,7 @@ def json_import(filename):
     with open(filename, 'r') as f:
         data = json.load(f)
         for ele in data:
-            cb_coll_lokal.upsert(ele["user_id"],ele)
+            cb_coll_lokal.upsert(ele["user_id-"],ele)
 
 @app.route('/upload_con')
 def upload_connections():
@@ -118,9 +118,9 @@ def txt_import(filename):
                 cb_coll_lokal.mutate_in(row["user"], (SD.array_append("", row["follow"]),))
 
 
-@app.route('/query', methods=['POST'])
+@app.route('/query')
 def pandas_test():
-    query = request.form['myquery']
+    query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 10"
     val = lookup_query(cluster, query)
     return val
 
