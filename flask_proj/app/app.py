@@ -9,7 +9,7 @@ from couchbase.options import (ClusterOptions, QueryOptions)
 import couchbase.subdocument as SD
 
 import numpy as np
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import csv
 
 app = Flask(__name__)
@@ -154,8 +154,9 @@ def contains_word():
     querystring = querystring + " order by TO_NUMBER(number_of_likes) desc limit 25"
     val = lookup_query(cluster, querystring)
 
-    return val   
-    
+    return val 
+    #return render_template('searchresults.html', title="page", jsonfile=json.dumps(val))
+    #return jsonify(val)
   
 
 @app.route('/create_index_user')
