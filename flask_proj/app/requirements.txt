@@ -6,5 +6,6 @@ pytest==7.1.2
 python-dotenv==0.20.0
 bcrypt==3.2.2
 couchbase==4.0.0
+pandas
 six==1.16.0
 Werkzeug==2.1.2

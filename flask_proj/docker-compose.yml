@@ -1,16 +1,41 @@
 version: '3.5'
 
 services:
+  couchbase1:
+    image: couchbase/server:community-aarch64
+    network_mode: bridge
+    depends_on:
+      - 'app'
+    volumes:
+      - ~/couchbase/node1:/opt/couchbase/var
+  couchbase2:
+    image: couchbase/server:community-aarch64
+    network_mode: bridge
+    depends_on:
+      - 'app'
+    volumes:
+      - ~/couchbase/node2:/opt/couchbase/var
+  couchbase3:
+    image: couchbase/server:community-aarch64
+    network_mode: bridge
+    depends_on:
+      - 'app'
+    volumes:
+      - ~/couchbase/node3:/opt/couchbase/var
+    ports:
+      - 8091-8097:8091-8097
+      - 9140:9140
+      - 11207:11207
+      - 18091-18097:18091-18097
+      - 11210:11210
   app:
     build:
       context: .
     expose:
       - 5001
     network_mode: bridge
+
     ports:
       - 80:5000
     volumes:
       - ./app:/app
-#networks:
- # proxynet:
-#    name: bridge
