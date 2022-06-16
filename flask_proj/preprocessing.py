@@ -1,4 +1,4 @@
-
+import pandas as pd
 
 filename = "app/ressources/twitter_combined.csv"
 
