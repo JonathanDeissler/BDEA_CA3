@@ -1,16 +1,16 @@
 services:
   couchbase1:
-    image: couchbase/server:community-aarch64
+    image: couchbase/server
     network_mode: bridge
     volumes:
       - ~/couchbase/node1:/opt/couchbase/var
   couchbase2:
-    image: couchbase/server:community-aarch64
+    image: couchbase/server
     network_mode: bridge
     volumes:
       - ~/couchbase/node2:/opt/couchbase/var
   couchbase3:
-    image: couchbase/server:community-aarch64
+    image: couchbase/server
     network_mode: bridge
     volumes:
       - ~/couchbase/node3:/opt/couchbase/var

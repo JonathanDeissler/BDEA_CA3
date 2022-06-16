@@ -2,24 +2,27 @@ version: '3.5'
 
 services:
   couchbase1:
-    image: couchbase/server:community-aarch64
+    image: couchbase/server
     network_mode: bridge
     depends_on:
       - 'app'
     volumes:
       - ~/couchbase/node1:/opt/couchbase/var
   couchbase2:
-    image: couchbase/server:community-aarch64
+    image: couchbase/server
     network_mode: bridge
     depends_on:
       - 'app'
+      - 'couchbase1'
     volumes:
       - ~/couchbase/node2:/opt/couchbase/var
   couchbase3:
-    image: couchbase/server:community-aarch64
+    image: couchbase/server
     network_mode: bridge
     depends_on:
       - 'app'
+      - 'couchbase1'
+      - 'couchbase2'
     volumes:
       - ~/couchbase/node3:/opt/couchbase/var
     ports:

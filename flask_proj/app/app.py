@@ -92,7 +92,7 @@ def json_import(filename):
     with open(filename, 'r') as f:
         data = json.load(f)
         for ele in data:
-            cb_coll_lokal.upsert(ele["user"],ele)
+            cb_coll_lokal.upsert(ele["user_id"],ele)
 
 @app.route('/upload_con')
 def upload_connections():
