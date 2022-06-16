@@ -59,7 +59,7 @@ def index():  # put application's code here
 
     cb = cluster.bucket(bucket_name)
     global cb_coll
-    cb_coll = cb.scope("_default").collection("_default")
+    cb_coll = cb.scope("_default").collection("posts")
 
     # Get a reference to the default collection, required for older Couchbase server versions
     cb_coll_default = cb.default_collection()
@@ -151,7 +151,7 @@ def create_index_user():
 
 @app.route('/create_index_tweets')
 def create_index_tweets():
-    qstr= "CREATE PRIMARY INDEX `#primary` ON Tweets USING GSI;"
+    qstr= "CREATE PRIMARY INDEX `#primary` ON Tweets._default.posts USING GSI;"
     try:
         ret = cluster.query(qstr).rows()
         return '<h1>' + "Index for Tweets created" + '</h1>'
