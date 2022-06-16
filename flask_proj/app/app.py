@@ -9,7 +9,6 @@ from couchbase.options import (ClusterOptions, QueryOptions)
 import couchbase.subdocument as SD
 
 from flask import Flask, render_template, request
-import pandas as pd
 import csv
 
 app = Flask(__name__)
@@ -92,7 +91,7 @@ def json_import(filename):
     with open(filename, 'r') as f:
         data = json.load(f)
         for ele in data:
-            cb_coll_lokal.upsert(ele["user_id-"],ele)
+            cb_coll_lokal.upsert(ele["user_id"],ele)
 
 @app.route('/upload_con')
 def upload_connections():

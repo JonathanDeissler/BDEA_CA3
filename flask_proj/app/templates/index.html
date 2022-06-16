@@ -3,21 +3,21 @@
 {% block content %}
     <h1>{% block title %} Welcome to Couchbase {% endblock %}</h1>
 
-<form action="/query", methods='POST'>
+<form action="/query" target="_blank">
     <label for="myquery">query:</label>
   <input type="text" id="myquery" name="myquery"><br><br>
   <input type="submit" value="Run Query">
 </form>
 
-<form action="/upload">
+<form action="/upload" target="_blank">
   <input type="submit" value="Import CSV">
 </form>
 
-<form action="/upload_con">
+<form action="/upload_con" target="_blank">
   <input type="submit" value="Import accounts">
 </form>
 
-<form action="/upload_account_new">
+<form action="/upload_account_new" target="_blank">
   <input type="submit" value="Import accounts new">
 </form>
 {% endblock %}
