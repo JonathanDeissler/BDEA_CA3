@@ -6,18 +6,24 @@
 <form action="/query" target="_blank">
     <label for="myquery">query:</label>
   <input type="text" id="myquery" name="myquery"><br><br>
-  <input type="submit" value="Run Query">
+  <input type="submit" value="Run Query" class="btn btn-primary">
 </form>
+
+<br>
 
 <form action="/upload" target="_blank">
-  <input type="submit" value="Import CSV">
+  <input type="submit" value="Import CSV" class="btn btn-primary">
 </form>
+
+<br>
 
 <form action="/upload_con" target="_blank">
-  <input type="submit" value="Import accounts">
+  <input type="submit" value="Import accounts" class="btn btn-primary" >
 </form>
 
+<br>
+
 <form action="/upload_account_new" target="_blank">
-  <input type="submit" value="Import accounts new">
+  <input type="submit" value="Import accounts new" class="btn btn-primary">
 </form>
 {% endblock %}
