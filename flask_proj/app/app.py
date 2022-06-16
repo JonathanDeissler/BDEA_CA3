@@ -8,6 +8,7 @@ from couchbase.cluster import Cluster
 from couchbase.options import (ClusterOptions, QueryOptions)
 import couchbase.subdocument as SD
 
+import numpy as np
 from flask import Flask, render_template, request
 import csv
 
@@ -69,7 +70,7 @@ def index():  # put application's code here
 @app.route('/upload')
 def upload_file():
     csv_import('../app/ressources/tweets.csv')
-    return '<h1>test</h1>'
+    return  '<h1>test</h1>'
 
 @app.route('/upload_account_new')
 def upload_json_file():
@@ -78,9 +79,19 @@ def upload_json_file():
 
 
 def csv_import(filename):
+    try:
+        sql_query = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
+        row_iter = cluster.query(
+            sql_query)
+        user_list = []
+        for row in row_iter:
+            user_list.append(row)
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
     with open(filename) as csvfile:
         reader = csv.DictReader(csvfile)
         for idx, row in enumerate(reader):
+            row["user_id"] = str(user_list[np.random.randint(0, 99)]["user_id"])
             cb_coll.upsert(str(idx), row)
 
 
@@ -119,7 +130,7 @@ def txt_import(filename):
 
 @app.route('/query_top_100')
 def query_top_100():
-    query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 10"
+    query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
 
     val = lookup_query(cluster, query)
     return val
