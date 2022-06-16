@@ -117,11 +117,18 @@ def txt_import(filename):
                 cb_coll_lokal.mutate_in(row["user"], (SD.array_append("", row["follow"]),))
 
 
-@app.route('/query')
-def pandas_test():
+@app.route('/query_top_100')
+def query_top_100():
     query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 10"
+
     val = lookup_query(cluster, query)
     return val
+
+@app.route('/query_custom')
+def query_custom():
+    query = request.args.get("myquery")
+    val = lookup_query(cluster, query)
+    return val    
 
 
 def lookup_query(cluster, query):

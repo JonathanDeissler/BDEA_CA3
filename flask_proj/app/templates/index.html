@@ -3,10 +3,19 @@
 {% block content %}
     <h1>{% block title %} Welcome to Couchbase {% endblock %}</h1>
 
-<form action="/query" target="_blank">
-    <label for="myquery">query:</label>
-  <input type="text" id="myquery" name="myquery"><br><br>
-  <input type="submit" value="Run Query" class="btn btn-primary">
+
+
+
+<form action="/query_custom" target="_blank">
+    
+  <input type="text" id="myquery" class="form-control" name="myquery" placeholder="Enter Query"> 
+  <input type="submit" value="Run custom query" class="btn btn-primary">
+</form>
+
+<br>
+
+<form action="/query_top_100" target="_blank">
+  <input type="submit" value="Get top 100 Accounts" class="btn btn-primary">
 </form>
 
 <br>
