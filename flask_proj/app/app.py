@@ -128,8 +128,27 @@ def query_top_100():
 def query_custom():
     query = request.args.get("myquery")
     val = lookup_query(cluster, query)
-    return val    
+    return val   
 
+@app.route('/create_index_user')
+def create_index_user():
+    qstr= "CREATE PRIMARY INDEX `#primary` ON Tweets._default.new_accounts USING GSI;"
+    try:
+        ret = cluster.query(qstr).rows()
+        return '<h1>' + "Index for Users created" + '</h1>'
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+@app.route('/create_index_tweets')
+def create_index_tweets():
+    qstr= "CREATE PRIMARY INDEX `#primary` ON Tweets USING GSI;"
+    try:
+        ret = cluster.query(qstr).rows()
+        return '<h1>' + "Index for Tweets created" + '</h1>'
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+  
 
 def lookup_query(cluster, query):
     print("\nLookup Result: ")
