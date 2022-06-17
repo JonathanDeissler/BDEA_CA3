@@ -9,6 +9,7 @@ from couchbase.options import (ClusterOptions, QueryOptions)
 import couchbase.subdocument as SD
 from couchbase.management import buckets
 from couchbase.management.buckets import CreateBucketSettings
+
 import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
@@ -146,10 +147,17 @@ def contains_word():
             querystring = querystring + " AND content LIKE" + " \"%"+searchwords[i]+'%\"' 
 
     querystring = querystring + " order by TO_NUMBER(number_of_likes) desc limit 25"
-    val = lookup_query(cluster, querystring)
+    val = lookup_query_list(cluster, querystring)
+    #val = val[0].get("posts")
+    #val = val[0]["posts"]["author"]
 
-    return val 
-    #return render_template('searchresults.html', title="page", jsonfile=json.dumps(val))
+            
+    # res_list = []
+    # for row in val:
+    #     res_list.append(row)
+
+    #return str(val)
+    return render_template('searchresults.html', title="page", results_dict=val)
     #return jsonify(val)
   
 
@@ -175,27 +183,38 @@ def create_index_user():
 
 
 
-@app.route('/create_bucket')
+@app.route('/initialize')
+def initialize():
+    createbucket()    
+    create_collections()
+    return "Everything is set up"
+
+
 def createbucket():
     cluster = setup_cluster()
-
     try: 
         cb = cluster.bucket("Tweets")
         exist = 1
-
     except:
         exist = 0
-
     if exist ==0:
         try:
             cb_buckets = cluster.buckets()
             cb_buckets.create_bucket(CreateBucketSettings(name="Tweets", bucket_type="couchbase", ram_quota_mb=300))
             return "Bucket created successfully"
         except Exception as e:
-            return '<h1>' + str(e) + '</h1>'
-        
-    if exist==1:
-            return "already exists"
+            return '<h1>' + str(e) + '</h1>'        
+
+
+def create_collections():
+    cluster = setup_cluster()
+
+    cluster.query("CREATE COLLECTION Tweets._default.new_accounts").rows() 
+    cluster.query("CREATE COLLECTION Tweets._default.posts").rows() 
+    cluster.query("CREATE COLLECTION Tweets._default.starting_page_cache").rows() 
+    
+
+
 
 @app.route('/starting_page')
 def starting_page():
@@ -307,6 +326,23 @@ def lookup_query(cluster, query):
             test_string = test_string + str(row)
         test_string = '<h1>' + test_string + '</h1>'
         return test_string
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+
+def lookup_query_list(cluster, query):
+    cluster = setup_cluster()
+
+    print("\nLookup Result: ")
+    try:
+        sql_query = query
+        row_iter = cluster.query(
+            sql_query)
+        erg_list = []
+        for row in row_iter:
+            erg_list.append(row)
+        #test_string = '<h1>' + test_string + '</h1>'
+        return erg_list
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
 
