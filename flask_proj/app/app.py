@@ -7,7 +7,8 @@ from couchbase.cluster import Cluster
 # needed for options -- cluster, timeout, SQL++ (N1QL) query, etc.
 from couchbase.options import (ClusterOptions, QueryOptions)
 import couchbase.subdocument as SD
-
+from couchbase.management import buckets
+from couchbase.management.buckets import CreateBucketSettings
 import numpy as np
 from flask import Flask, render_template, request, jsonify
 import csv
@@ -176,6 +177,28 @@ def create_index_tweets():
         return '<h1>' + "Index for Tweets created" + '</h1>'
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
+
+
+
+@app.route('/create_bucket')
+def createbucket():
+    try: 
+        cb = cluster.bucket("Tweets")
+        exist = 1
+
+    except:
+        exist = 0
+
+    if exist ==0:
+        try:
+            cb_buckets = cluster.buckets()
+            cb_buckets.create_bucket(CreateBucketSettings(name="Tweets", bucket_type="couchbase", ram_quota_mb=300))
+            return "Bucket created successfully"
+        except Exception as e:
+            return '<h1>' + str(e) + '</h1>'
+        
+    if exist==1:
+            return "already exists"
 
   
 
