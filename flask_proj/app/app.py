@@ -33,38 +33,25 @@ new_tweet = {
     "number_of_shares": "1380"
     }
 }
+# Update this to your cluster
+username = "admin"
+password = "123456"
+bucket_name = "Tweets"
+cert_path = "path/to/certificate"
+# User Input ends here.
+
+# Connect options - authentication
+auth = PasswordAuthenticator(
+    username,
+    password,
+    # NOTE: If using SSL/TLS, add the certificate path.
+    # We strongly reccomend this for production use.
+    # cert_path=cert_path
+)
+
 
 @app.route('/')
 def index():  # put application's code here
-
-    tweet = {
-        "author": "katyperry",
-        "content": "@barackobama Thank you for your incredible grace in leadership and for being an exceptional… https://t.co/ZuQLZpt6df",
-        "country": "",
-        "date_time": "11 / 01 / 2017 08:38",
-        "id": 8.19101E+17,
-        "language": "en",
-        "latitude": "",
-        "longitude": "",
-        "number_of_likes": 6969,
-        "number_of_shares": 1380
-    }
-
-    # Update this to your cluster
-    username = "admin"
-    password = "123456"
-    bucket_name = "Tweets"
-    cert_path = "path/to/certificate"
-    # User Input ends here.
-
-    # Connect options - authentication
-    auth = PasswordAuthenticator(
-        username,
-        password,
-        # NOTE: If using SSL/TLS, add the certificate path.
-        # We strongly reccomend this for production use.
-        # cert_path=cert_path
-    )
 
     # Get a reference to our cluster
     # NOTE: For TLS/SSL connection use 'couchbases://<your-ip-address>' instead
@@ -98,6 +85,8 @@ def upload_json_file():
 
 
 def csv_import(filename):
+    cluster = setup_cluster()
+
     try:
         sql_query = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
         row_iter = cluster.query(
@@ -115,6 +104,8 @@ def csv_import(filename):
 
 
 def json_import(filename):
+    cluster = setup_cluster()
+
     bucket_name = "Tweets"
     cb = cluster.bucket(bucket_name)
     cb_coll_lokal = cb.scope("_default").collection("new_accounts")
@@ -123,44 +114,28 @@ def json_import(filename):
         for ele in data:
             cb_coll_lokal.upsert(ele["user_id"],ele)
 
-@app.route('/upload_con')
-def upload_connections():
-    txt_import('ressources/twitter_combined.csv')
-    return '<h1>test</h1>'
-
-
-def txt_import(filename):
-    bucket_name = "Tweets"
-    cb = cluster.bucket(bucket_name)
-    cb_coll_lokal = cb.scope("_default").collection("accounts")
-    with open(filename) as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=' ')
-        for row in reader:
-
-            try:
-                old_value = cb_coll_lokal.get(row["user"])
-            except:
-                old_value = None
-            if not old_value:
-                cb_coll_lokal.upsert(row["user"], [row["follow"]])
-            else:
-                cb_coll_lokal.mutate_in(row["user"], (SD.array_append("", row["follow"]),))
 
 
 @app.route('/query_top_100')
 def query_top_100():
+    cluster = setup_cluster()
+
     query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
     val = lookup_query(cluster, query)
     return val
 
 @app.route('/query_custom')
 def query_custom():
+    cluster = setup_cluster()
+
     query = request.args.get("myquery")
     val = lookup_query(cluster, query)
     return val   
 
 @app.route('/contains_word')
 def contains_word():
+    cluster = setup_cluster()
+
     query = request.args.get("words")
     querystring = "select * from Tweets._default.posts where content LIKE"
     searchwords = query.split(" ")
@@ -180,6 +155,8 @@ def contains_word():
 
 @app.route('/create_index')
 def create_index_user():
+    cluster = setup_cluster()
+
     index_queries = []
     index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.new_accounts USING GSI;")
     index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.posts USING GSI;")
@@ -200,6 +177,8 @@ def create_index_user():
 
 @app.route('/create_bucket')
 def createbucket():
+    cluster = setup_cluster()
+
     try: 
         cb = cluster.bucket("Tweets")
         exist = 1
@@ -220,6 +199,8 @@ def createbucket():
 
 @app.route('/starting_page')
 def starting_page():
+    cluster = setup_cluster()
+
     current_user = request.args.get("current_user")
     cb_cache = cluster.bucket("Tweets").scope("_default").collection("starting_page_cache")    
     try:
@@ -241,6 +222,8 @@ def starting_page():
 
 
 def build_starting_page(current_user):
+    cluster = setup_cluster()
+
     current_user_clean = current_user
     current_user  = '"' + current_user + '"'
     
@@ -312,6 +295,8 @@ def build_starting_page(current_user):
 
 
 def lookup_query(cluster, query):
+    cluster = setup_cluster()
+
     print("\nLookup Result: ")
     try:
         sql_query = query
@@ -334,6 +319,8 @@ def upload_followers():
 
 @app.route('/create_post')
 def create_post():
+    cluster = setup_cluster()
+
     user_id = request.args.get("user_post")
     user_id = "\""+user_id+"\""
 
@@ -367,6 +354,8 @@ def create_post():
 
 
 def get_most_followers():
+    cluster = setup_cluster()
+
     acc_100 = []
     all_followers = []
     sql_query_100 = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(following_id) desc limit 100"
@@ -391,5 +380,18 @@ def get_most_followers():
     return pd.DataFrame.to_json(df1)
     # return df1
 
+
+def setup_cluster():
+    cluster = Cluster('couchbase://172.17.0.4', ClusterOptions(auth))
+
+    # Wait until the cluster is ready for use.
+    cluster.wait_until_ready(timedelta(seconds=5))
+
+    # get a reference to our bucket
+
+    cb = cluster.bucket(bucket_name)
+    global cb_coll
+    cb_coll = cb.scope("_default").collection("posts")
+    return cluster
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0")
