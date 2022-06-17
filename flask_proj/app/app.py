@@ -122,8 +122,9 @@ def query_top_100():
     cluster = setup_cluster()
 
     query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
-    val = lookup_query(cluster, query)
-    return val
+    val = lookup_query_list(cluster, query)
+    return render_template('top_100.html', title="page", results_dict=val)
+    #return str(val)
 
 @app.route('/query_posts_from_user')
 def query_posts_from_user():
@@ -134,16 +135,18 @@ def query_posts_from_user():
 
     query = "select * from Tweets._default.posts where user_id = " + str(current_user)
 
-    val = lookup_query(cluster, query)
-    return val
+    val = lookup_query_list(cluster, query)
+    #return val
+    return render_template('searchresults.html', title="page", results_dict=val)
 
 @app.route('/query_custom')
 def query_custom():
     cluster = setup_cluster()
 
     query = request.args.get("myquery")
-    val = lookup_query(cluster, query)
-    return val   
+    val = lookup_query_list(cluster, query)
+     
+    return render_template('searchresults.html', title="page", results_dict=val)
 
 @app.route('/contains_word')
 def contains_word():
@@ -233,7 +236,9 @@ def starting_page():
     cluster = setup_cluster()
 
     current_user = request.args.get("current_user")
-    cb_cache = cluster.bucket("Tweets").scope("_default").collection("starting_page_cache")    
+    cb_cache = cluster.bucket("Tweets").scope("_default").collection("starting_page_cache")  
+    follower = get_follower_count(current_user)
+    following = get_following_count(current_user)  
     try:
         old_value = cb_cache.get(current_user)
         
@@ -242,14 +247,15 @@ def starting_page():
 
     if old_value:
        cache_query = "select starting_page_cache[-25:] from Tweets._default.starting_page_cache USE KEYS "+ "\""+current_user+"\""
-       val= lookup_query(cluster, cache_query)
+       val= lookup_query_list(cluster, cache_query)
+       val= val[0]["$1"]       
      
-      
 
     else:
-        val = build_starting_page(current_user)
-
-    return str(val)
+        val = build_starting_page(current_user)    
+    
+    return render_template('starting_page_cached.html', title="page", results_dict=val, follower=follower, following=following)
+  
 
 
 def build_starting_page(current_user):
@@ -257,31 +263,6 @@ def build_starting_page(current_user):
 
     current_user_clean = current_user
     current_user  = '"' + current_user + '"'
-    
-    try:
-        num_followers_query = "select ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts where user_id = " + str(current_user)
-        row_iter = cluster.query(
-            num_followers_query)
-        res_list = []
-        for row in row_iter:
-            res_list.append(row)
-        followers = str(res_list[0]["$1"])
-
-    except Exception as e:
-        return '<h1>' + str(e) + '</h1>'
-
-    try:
-        num_following_query = "select ARRAY_LENGTH(following_id) from Tweets._default.new_accounts where user_id = " + str(
-            current_user)
-        row_iter = cluster.query(
-            num_following_query)
-        res_list = []
-        for row in row_iter:
-            res_list.append(row)
-        following = str(res_list[0]["$1"])
-    except Exception as e:
-        return '<h1>' + str(e) + '</h1>'
-
     try:
         following_query = "select following_id from Tweets._default.new_accounts where user_id = " + str(
             current_user)
@@ -322,8 +303,40 @@ def build_starting_page(current_user):
             cb_coll_lokal.mutate_in(current_user_clean, (SD.array_append("", ele),))    
 
 
-    return '<h1>' + str(posts) + '</h1>'
+    return posts
 
+
+def get_follower_count(current_user):
+    current_user  = '"' + current_user + '"'
+    cluster = setup_cluster()    
+    try:
+        num_followers_query = "select ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts where user_id = " + str(current_user)
+        row_iter = cluster.query(
+            num_followers_query)
+        res_list = []
+        for row in row_iter:
+            res_list.append(row)
+        followers = str(res_list[0]["$1"])
+        return followers
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+
+def get_following_count(current_user):
+    cluster = setup_cluster()  
+    current_user  = '"' + current_user + '"'
+    try:
+        num_following_query = "select ARRAY_LENGTH(following_id) from Tweets._default.new_accounts where user_id = " + str(
+            current_user)
+        row_iter = cluster.query(
+            num_following_query)
+        res_list = []
+        for row in row_iter:
+            res_list.append(row)
+        following = str(res_list[0]["$1"])
+        return following
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'        
 
 def lookup_query(cluster, query):
     cluster = setup_cluster()
@@ -362,7 +375,7 @@ def lookup_query_list(cluster, query):
 @app.route('/followers')
 def upload_followers():
     val = get_most_followers()
-    return '<h1>'+ str(val) +'</h1>'
+    return render_template('follows_top_100.html', title="page", results_dict=val)
 
 
 @app.route('/create_post')
@@ -425,7 +438,7 @@ def get_most_followers():
     #Zurückspeichern
     df1 = df1.rename_axis('user_id').reset_index()
     df1.columns = ['user_id', 'occourens']
-    return pd.DataFrame.to_json(df1)
+    return df1.values.tolist()
     # return df1
 
 

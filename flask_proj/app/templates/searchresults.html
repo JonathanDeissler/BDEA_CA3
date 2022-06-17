@@ -5,6 +5,7 @@
 
 
 {% for result in results_dict %}
+<br>
 <div class="card">
     <h5 class="card-header">Author: {{ result['posts'].author }}</h5>
     <div class="card-body">
@@ -13,6 +14,7 @@
       
     </div>
   </div>
+  
   {% endfor %}
 
 
