@@ -17,6 +17,21 @@ import csv
 app = Flask(__name__)
 cb_coll = None
 cluster = None
+
+
+new_tweet = {
+    "author": "Oliver Hummel",
+    "content": "Hyper Hyper, 1,0 für Gruppe G",
+    "country": "",
+    "date_time": "11 / 01 / 2017 08:38",
+    "id": 8.19101E+17,
+    "language": "en",
+    "latitude": "",
+    "longitude": "",
+    "number_of_likes": 6969,
+    "number_of_shares": 1380
+}
+
 @app.route('/')
 def index():  # put application's code here
 
@@ -161,23 +176,23 @@ def contains_word():
     #return jsonify(val)
   
 
-@app.route('/create_index_user')
+@app.route('/create_index')
 def create_index_user():
-    qstr= "CREATE PRIMARY INDEX `#primary` ON Tweets._default.new_accounts USING GSI;"
-    try:
-        ret = cluster.query(qstr).rows()
-        return '<h1>' + "Index for Users created" + '</h1>'
-    except Exception as e:
-        return '<h1>' + str(e) + '</h1>'
+    index_queries = []
+    index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.new_accounts USING GSI;")
+    index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.posts USING GSI;")
+    index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.starting_page_cache USING GSI;")
 
-@app.route('/create_index_tweets')
-def create_index_tweets():
-    qstr= "CREATE PRIMARY INDEX `#primary` ON Tweets._default.posts USING GSI;"
-    try:
-        ret = cluster.query(qstr).rows()
-        return '<h1>' + "Index for Tweets created" + '</h1>'
-    except Exception as e:
-        return '<h1>' + str(e) + '</h1>'
+    for string in index_queries:
+
+        try:
+            cluster.query(string).rows()            
+        except Exception as e:
+            return '<h1>' + str(e) + '</h1>'
+
+
+    return '<h1>' + "Indexes created" + '</h1>'
+
 
 
 
@@ -257,6 +272,22 @@ def build_starting_page(current_user):
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
 
+    
+    cb = cluster.bucket("Tweets")
+    cb_coll_lokal = cb.scope("_default").collection("starting_page_cache")
+    for ele in posts:
+        try:
+            old_value = cb_coll_lokal.get(current_user)
+        except:
+            old_value = None
+
+        if not old_value:
+            cb_coll_lokal.upsert(current_user, [ele])
+
+        else:
+            cb_coll_lokal.mutate_in(current_user, (SD.array_append("", ele),))    
+
+
     return '<h1>' + str(posts) + '</h1>'
 
 
@@ -279,6 +310,45 @@ def lookup_query(cluster, query):
 def upload_followers():
     val = get_most_followers()
     return '<h1>'+ str(val) +'</h1>'
+
+
+@app.route('/create_post')
+def create_post():
+    user_id = request.args.get("user_post")
+    user_id = "\""+user_id+"\""
+
+    try:
+        following_query = "select following_id from Tweets._default.new_accounts where user_id = " + str(user_id)
+        row_iter = cluster.query(
+            following_query)
+        res_list = []
+        for row in row_iter:
+            res_list.append(row)
+        following_accs = res_list[0]["following_id"]
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+
+    for ele in following_accs:
+        cb_cache = cluster.bucket("Tweets").scope("_default").collection("starting_page_cache")
+        try:
+            old_value = cb_cache.get(ele)
+            
+        except:
+            old_value = None
+
+        if old_value:
+            cb_cache.mutate_in(ele, (SD.array_append("", new_tweet),)) 
+            return "ich würde was schreiben"
+
+    
+    
+
+    
+    return "geklappt"
+
+  
+
 
 def get_most_followers():
     acc_100 = []

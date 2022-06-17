@@ -43,6 +43,14 @@
 
 <br>
 
+<form action="/create_post" target="_blank">
+    
+  <input type="text" id="user_post" class="form-control" name="user_post" placeholder="User ID"> 
+  <input type="submit" value="create post" class="btn btn-primary">
+</form>
+
+<br>
+
 
 <form action="/upload" target="_blank">
   <input type="submit" value="Import CSV with Tweets Data" class="btn btn-primary">
@@ -62,13 +70,8 @@
 
 <br>
 
-<form action="/create_index_user" target="_blank">
-  <input type="submit" value="create index user" class="btn btn-danger">
+<form action="/create_index" target="_blank">
+  <input type="submit" value="create index" class="btn btn-danger">
 </form>
 
-<br>
-
-<form action="/create_index_tweets" target="_blank">
-  <input type="submit" value="create index tweets" class="btn btn-danger">
-</form>
 {% endblock %}
