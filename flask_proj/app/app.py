@@ -20,16 +20,18 @@ cluster = None
 
 
 new_tweet = {
+    "posts": {
     "author": "Oliver Hummel",
     "content": "Hyper Hyper, 1,0 für Gruppe G",
     "country": "",
     "date_time": "11 / 01 / 2017 08:38",
-    "id": 8.19101E+17,
+    "id": "8.19101E+17",
     "language": "en",
     "latitude": "",
     "longitude": "",
-    "number_of_likes": 6969,
-    "number_of_shares": 1380
+    "number_of_likes": "6969",
+    "number_of_shares": "1380"
+    }
 }
 
 @app.route('/')
@@ -219,12 +221,29 @@ def createbucket():
 @app.route('/starting_page')
 def starting_page():
     current_user = request.args.get("current_user")
-    current_user  = '"' + str(current_user) + '"'
-    val = build_starting_page(current_user)
-    return val
+    cb_cache = cluster.bucket("Tweets").scope("_default").collection("starting_page_cache")    
+    try:
+        old_value = cb_cache.get(current_user)
+        
+    except:
+        old_value = None
+
+    if old_value:
+       cache_query = "select starting_page_cache[-25:] from Tweets._default.starting_page_cache USE KEYS "+ "\""+current_user+"\""
+       val= lookup_query(cluster, cache_query)
+     
+      
+
+    else:
+        val = build_starting_page(current_user)
+
+    return str(val)
 
 
 def build_starting_page(current_user):
+    current_user_clean = current_user
+    current_user  = '"' + current_user + '"'
+    
     try:
         num_followers_query = "select ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts where user_id = " + str(current_user)
         row_iter = cluster.query(
@@ -275,17 +294,18 @@ def build_starting_page(current_user):
     
     cb = cluster.bucket("Tweets")
     cb_coll_lokal = cb.scope("_default").collection("starting_page_cache")
+
     for ele in posts:
         try:
-            old_value = cb_coll_lokal.get(current_user)
+            old_value = cb_coll_lokal.get(current_user_clean)
         except:
             old_value = None
 
         if not old_value:
-            cb_coll_lokal.upsert(current_user, [ele])
+            cb_coll_lokal.upsert(current_user_clean, [ele])
 
         else:
-            cb_coll_lokal.mutate_in(current_user, (SD.array_append("", ele),))    
+            cb_coll_lokal.mutate_in(current_user_clean, (SD.array_append("", ele),))    
 
 
     return '<h1>' + str(posts) + '</h1>'
@@ -328,23 +348,19 @@ def create_post():
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
 
-
+    cb_cache = cluster.bucket("Tweets").scope("_default").collection("starting_page_cache")
     for ele in following_accs:
-        cb_cache = cluster.bucket("Tweets").scope("_default").collection("starting_page_cache")
+        
         try:
-            old_value = cb_cache.get(ele)
+            old_value = cb_cache.get(str(ele))
             
         except:
             old_value = None
 
         if old_value:
             cb_cache.mutate_in(ele, (SD.array_append("", new_tweet),)) 
-            return "ich würde was schreiben"
+              
 
-    
-    
-
-    
     return "geklappt"
 
   
