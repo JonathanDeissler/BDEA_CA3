@@ -10,6 +10,7 @@ import couchbase.subdocument as SD
 from couchbase.management import buckets
 from couchbase.management.buckets import CreateBucketSettings
 import numpy as np
+import pandas as pd
 from flask import Flask, render_template, request, jsonify
 import csv
 
@@ -200,7 +201,64 @@ def createbucket():
     if exist==1:
             return "already exists"
 
-  
+@app.route('/starting_page')
+def starting_page():
+    current_user = request.args.get("current_user")
+    current_user  = '"' + str(current_user) + '"'
+    val = build_starting_page(current_user)
+    return val
+
+
+def build_starting_page(current_user):
+    try:
+        num_followers_query = "select ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts where user_id = " + str(current_user)
+        row_iter = cluster.query(
+            num_followers_query)
+        res_list = []
+        for row in row_iter:
+            res_list.append(row)
+        followers = str(res_list[0]["$1"])
+
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+    try:
+        num_following_query = "select ARRAY_LENGTH(following_id) from Tweets._default.new_accounts where user_id = " + str(
+            current_user)
+        row_iter = cluster.query(
+            num_following_query)
+        res_list = []
+        for row in row_iter:
+            res_list.append(row)
+        following = str(res_list[0]["$1"])
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+    try:
+        following_query = "select following_id from Tweets._default.new_accounts where user_id = " + str(
+            current_user)
+        row_iter = cluster.query(
+            following_query)
+        res_list = []
+        for row in row_iter:
+            res_list.append(row)
+        following_accs = res_list[0]["following_id"]
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+    try:
+        posts_query = "select * from Tweets._default.posts  where user_id in " + str(following_accs) + "order by TO_NUMBER(number_of_likes) desc limit 25"
+        row_iter = cluster.query(
+            posts_query)
+        res_list = []
+        for row in row_iter:
+            res_list.append(row)
+        posts= res_list
+    except Exception as e:
+        return '<h1>' + str(e) + '</h1>'
+
+    return '<h1>' + str(posts) + '</h1>'
+
 
 def lookup_query(cluster, query):
     print("\nLookup Result: ")
@@ -216,6 +274,36 @@ def lookup_query(cluster, query):
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
 
+
+@app.route('/followers')
+def upload_followers():
+    val = get_most_followers()
+    return '<h1>'+ str(val) +'</h1>'
+
+def get_most_followers():
+    acc_100 = []
+    all_followers = []
+    sql_query_100 = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(following_id) desc limit 100"
+    sql_query_followers = "select following_id from Tweets._default.new_accounts"
+    row_iter_100 = cluster.query(sql_query_100)
+    row_iter_followers = cluster.query(sql_query_followers)
+    for row in row_iter_100:
+        acc_100.append(row)
+    for row in row_iter_followers:
+        all_followers.append(row)
+
+    acc_100_df = pd.DataFrame.from_dict(acc_100)
+    acc_100_list = acc_100_df.user_id.to_list()
+
+    follow_data = pd.DataFrame.from_dict(all_followers)
+    df_test = follow_data.explode('following_id')
+    df1 = df_test[df_test.following_id.isin(acc_100_list)].value_counts().to_frame()
+
+    #Zurückspeichern
+    df1 = df1.rename_axis('user_id').reset_index()
+    df1.columns = ['user_id', 'occourens']
+    return pd.DataFrame.to_json(df1)
+    # return df1
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0")
