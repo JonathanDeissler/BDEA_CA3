@@ -124,6 +124,18 @@ def query_top_100():
     val = lookup_query(cluster, query)
     return val
 
+@app.route('/query_posts_from_user')
+def query_posts_from_user():
+    cluster = setup_cluster()
+
+    current_user = request.args.get("current_user")
+    current_user = '"' + current_user + '"'
+
+    query = "select * from Tweets._default.posts where user_id = " + str(current_user)
+
+    val = lookup_query(cluster, query)
+    return val
+
 @app.route('/query_custom')
 def query_custom():
     cluster = setup_cluster()
