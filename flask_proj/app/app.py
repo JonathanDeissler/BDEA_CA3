@@ -257,23 +257,14 @@ def build_starting_page(current_user):
     try:
         following_query = "select following_id from Tweets._default.new_accounts where user_id = " + str(
             current_user)
-        row_iter = cluster.query(
-            following_query)
-        res_list = []
-        for row in row_iter:
-            res_list.append(row)
+        res_list = lookup_query_list(cluster, following_query)
         following_accs = res_list[0]["following_id"]
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
 
     try:
-        posts_query = "select * from Tweets._default.posts  where user_id in " + str(following_accs) + "order by TO_NUMBER(number_of_likes) desc limit 25"
-        row_iter = cluster.query(
-            posts_query)
-        res_list = []
-        for row in row_iter:
-            res_list.append(row)
-        posts= res_list
+        posts_query = "select * from Tweets._default.posts where user_id in " + str(following_accs) + "order by TO_NUMBER(number_of_likes) desc limit 25"
+        posts = lookup_query_list(cluster, posts_query)
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
 
@@ -298,15 +289,11 @@ def build_starting_page(current_user):
 
 
 def get_follower_count(current_user):
-    current_user  = '"' + current_user + '"'
+    current_user = '"' + current_user + '"'
     cluster = setup_cluster()    
     try:
         num_followers_query = "select ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts where user_id = " + str(current_user)
-        row_iter = cluster.query(
-            num_followers_query)
-        res_list = []
-        for row in row_iter:
-            res_list.append(row)
+        res_list = lookup_query_list(cluster, num_followers_query)
         followers = str(res_list[0]["$1"])
         return followers
     except Exception as e:
@@ -315,15 +302,12 @@ def get_follower_count(current_user):
 
 def get_following_count(current_user):
     cluster = setup_cluster()  
-    current_user  = '"' + current_user + '"'
+    current_user = '"' + current_user + '"'
     try:
         num_following_query = "select ARRAY_LENGTH(following_id) from Tweets._default.new_accounts where user_id = " + str(
             current_user)
-        row_iter = cluster.query(
-            num_following_query)
-        res_list = []
-        for row in row_iter:
-            res_list.append(row)
+
+        res_list = lookup_query_list(cluster, num_following_query)
         following = str(res_list[0]["$1"])
         return following
     except Exception as e:
