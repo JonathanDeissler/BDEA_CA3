@@ -77,12 +77,12 @@ def index():  # put application's code here
 @app.route('/upload')
 def upload_file():
     csv_import('../app/ressources/tweets.csv')
-    return  '<h1>test</h1>'
+    return  "done"
 
 @app.route('/upload_account_new')
 def upload_json_file():
     json_import('../app/ressources/data.json')
-    return '<h1>test</h1>'
+    return "done"
 
 
 def csv_import(filename):
@@ -99,9 +99,9 @@ def csv_import(filename):
         return '<h1>' + str(e) + '</h1>'
     with open(filename) as csvfile:
         reader = csv.DictReader(csvfile)
-        for idx, row in enumerate(reader):
+        for row in reader:
             row["user_id"] = str(user_list[np.random.randint(0, 99)]["user_id"])
-            cb_coll.upsert(str(idx), row)
+            cb_coll.upsert(str(hash(str(row))), row)
 
 
 def json_import(filename):
@@ -124,7 +124,7 @@ def query_top_100():
     query = "select user_id,ARRAY_LENGTH(followers_id) from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
     val = lookup_query_list(cluster, query)
     return render_template('top_100.html', title="page", results_dict=val)
-    #return str(val)
+
 
 @app.route('/query_posts_from_user')
 def query_posts_from_user():
@@ -136,7 +136,6 @@ def query_posts_from_user():
     query = "select * from Tweets._default.posts where user_id = " + str(current_user)
 
     val = lookup_query_list(cluster, query)
-    #return val
     return render_template('searchresults.html', title="page", results_dict=val)
 
 @app.route('/query_custom')
@@ -163,17 +162,9 @@ def contains_word():
 
     querystring = querystring + " order by TO_NUMBER(number_of_likes) desc limit 25"
     val = lookup_query_list(cluster, querystring)
-    #val = val[0].get("posts")
-    #val = val[0]["posts"]["author"]
 
-            
-    # res_list = []
-    # for row in val:
-    #     res_list.append(row)
-
-    #return str(val)
     return render_template('searchresults.html', title="page", results_dict=val)
-    #return jsonify(val)
+
   
 
 @app.route('/create_index')
@@ -378,6 +369,17 @@ def upload_followers():
     return render_template('follows_top_100.html', title="page", results_dict=val)
 
 
+@app.route('/hashen')
+def hashen():
+
+    with open('../app/ressources/tweets.csv') as csvfile:
+        hash_list = []
+        reader = csv.DictReader(csvfile)
+        for idx, row in enumerate(reader):
+            hash_list.append(hash(str(row)))
+
+        return str(hash_list)
+
 @app.route('/create_post')
 def create_post():
     cluster = setup_cluster()
@@ -419,26 +421,15 @@ def get_most_followers():
 
     acc_100 = []
     all_followers = []
-    sql_query_100 = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(following_id) desc limit 100"
+    sql_query_100 = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
     sql_query_followers = "select following_id from Tweets._default.new_accounts"
-    row_iter_100 = cluster.query(sql_query_100)
-    row_iter_followers = cluster.query(sql_query_followers)
-    for row in row_iter_100:
-        acc_100.append(row)
-    for row in row_iter_followers:
-        all_followers.append(row)
+    
+    acc_100_list = lookup_query_list(cluster, sql_query_100)
+    all_followers = lookup_query_list(cluster, sql_query_followers)
 
-    acc_100_df = pd.DataFrame.from_dict(acc_100)
-    acc_100_list = acc_100_df.user_id.to_list()
 
-    follow_data = pd.DataFrame.from_dict(all_followers)
-    df_test = follow_data.explode('following_id')
-    df1 = df_test[df_test.following_id.isin(acc_100_list)].value_counts().to_frame()
 
-    #Zurückspeichern
-    df1 = df1.rename_axis('user_id').reset_index()
-    df1.columns = ['user_id', 'occourens']
-    return df1.values.tolist()
+    return 1
     # return df1
 
 
