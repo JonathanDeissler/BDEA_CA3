@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+import time
 
 # needed for any cluster connection
 from couchbase.auth import PasswordAuthenticator
@@ -61,17 +62,6 @@ def index():  # put application's code here
 
     # Wait until the cluster is ready for use.
     cluster.wait_until_ready(timedelta(seconds=5))
-
-    # get a reference to our bucket
-
-    cb = cluster.bucket(bucket_name)
-    global cb_coll
-    cb_coll = cb.scope("_default").collection("posts")
-
-    # Get a reference to the default collection, required for older Couchbase server versions
-    cb_coll_default = cb.default_collection()
-    print("hallo Docker")
-
     return render_template('index.html')
 
 @app.route('/upload')
@@ -186,18 +176,23 @@ def create_index_user():
 
     return '<h1>' + "Indexes created" + '</h1>'
 
-
-
-
-@app.route('/initialize')
-def initialize():
+@app.route('/initialize_bucket')
+def initialize_bucket():
     createbucket()    
+    time.sleep(10)
+    return "Bucket created"
+
+
+
+@app.route('/initialize_collections')
+def initialize_collections():  
     create_collections()
-    return "Everything is set up"
+    time.sleep(3)
+    return "Collections created"
 
 
 def createbucket():
-    cluster = setup_cluster()
+    cluster = Cluster('couchbase://172.17.0.4', ClusterOptions(auth))
     try: 
         cb = cluster.bucket("Tweets")
         exist = 1
@@ -213,7 +208,7 @@ def createbucket():
 
 
 def create_collections():
-    cluster = setup_cluster()
+    cluster = Cluster('couchbase://172.17.0.4', ClusterOptions(auth))
 
     cluster.query("CREATE COLLECTION Tweets._default.new_accounts").rows() 
     cluster.query("CREATE COLLECTION Tweets._default.posts").rows() 
@@ -332,7 +327,7 @@ def lookup_query_list(cluster, query):
 
 
 @app.route('/followers')
-def upload_followers():
+def following_top_100():
     val = get_most_followers()
 
     return render_template('top_100.html', title="page", results_dict=val)
