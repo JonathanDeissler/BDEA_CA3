@@ -1,6 +1,6 @@
 import pandas as pd
 
-filename = "app/ressources/twitter_combined.csv"
+filename = "app/resources/twitter_combined.csv"
 
 following = {
 }
@@ -38,11 +38,11 @@ for user in followers:
 json_file = df.to_json(orient='records')
 
 import json
-with open('app/ressources/data.json', 'a') as f:
+with open('app/resources/data.json', 'a') as f:
     pass
     f.write(json_file + '\n')
 
-with open('app/ressources/data.json', 'r') as f:
+with open('app/resources/data.json', 'r') as f:
     data = json.load(f)
     for ele in data:
         print(ele)

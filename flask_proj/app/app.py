@@ -76,12 +76,12 @@ def index():  # put application's code here
 
 @app.route('/upload')
 def upload_file():
-    csv_import('../app/ressources/tweets.csv')
+    csv_import('resources/tweets.csv')
     return  "done"
 
 @app.route('/upload_account_new')
 def upload_json_file():
-    json_import('../app/ressources/data.json')
+    json_import('resources/data.json')
     return "done"
 
 
@@ -329,22 +329,6 @@ def get_following_count(current_user):
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'        
 
-def lookup_query(cluster, query):
-    cluster = setup_cluster()
-
-    print("\nLookup Result: ")
-    try:
-        sql_query = query
-        row_iter = cluster.query(
-            sql_query)
-        test_string = ""
-        for row in row_iter:
-            test_string = test_string + str(row)
-        test_string = '<h1>' + test_string + '</h1>'
-        return test_string
-    except Exception as e:
-        return '<h1>' + str(e) + '</h1>'
-
 
 def lookup_query_list(cluster, query):
     cluster = setup_cluster()
@@ -369,10 +353,7 @@ def upload_followers():
     return render_template('follows_top_100.html', title="page", results_dict=val)
 
 
-@app.route('/hashen')
-def hashen():
-
-    with open('../app/ressources/tweets.csv') as csvfile:
+    with open('resources/tweets.csv') as csvfile:
         hash_list = []
         reader = csv.DictReader(csvfile)
         for idx, row in enumerate(reader):
