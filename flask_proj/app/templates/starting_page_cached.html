@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th style="text-align:center" scope="col">Follower</th>
+      <th style="text-align:center" scope="col">Following</th>
+
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr>
+      <td style="text-align:center">{{ follower }}</td>
+      <td style="text-align:center">{{ following }}</td>
+   
+    </tr>
+
+ 
+
+  </tbody>
+</table>
+
+
+{% for result in results_dict %}
+<br>
+<div class="card">
+    <h5 class="card-header">Author: {{ result['posts'].author }}</h5>
+    <div class="card-body">
+      <h5 class="card-title">Tweet: {{ result['posts'].content }}</h5>
+      <p class="card-text">Likes: {{ result['posts'].number_of_likes }}</p>
+      
+    </div>
+  </div>
+  
+  {% endfor %}
+
+
+
+  {% endblock %}
