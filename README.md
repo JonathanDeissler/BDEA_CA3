@@ -4,3 +4,4 @@ Gruppenteilnehmer:
               Jonathan Deißler
               Cedric Jung
               Mike Sickmüller
+ Die Installationsanleitung ist in der Doku zu finden
