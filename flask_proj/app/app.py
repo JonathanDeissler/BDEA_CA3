@@ -334,7 +334,8 @@ def lookup_query_list(cluster, query):
 @app.route('/followers')
 def upload_followers():
     val = get_most_followers()
-    return render_template('follows_top_100.html', title="page", results_dict=val)
+
+    return render_template('top_100.html', title="page", results_dict=val)
 
 
     with open('resources/tweets.csv') as csvfile:
@@ -384,18 +385,22 @@ def create_post():
 def get_most_followers():
     cluster = setup_cluster()
 
-    acc_100 = []
-    all_followers = []
+
     sql_query_100 = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
-    sql_query_followers = "select following_id from Tweets._default.new_accounts"
+
+
     
     acc_100_list = lookup_query_list(cluster, sql_query_100)
-    all_followers = lookup_query_list(cluster, sql_query_followers)
+    following_accs = []
+    for ele in acc_100_list:
+        following_accs.append(ele["user_id"])
 
 
+    sql_query_followers = "select user_id, ARRAY_LENGTH(ARRAY_INTERSECT( " + str(following_accs) + ", following_id)) from Tweets._default.new_accounts order by ARRAY_LENGTH(ARRAY_INTERSECT( "+ str(following_accs) + ", following_id)) desc LIMIT 100"
+    res = lookup_query_list(cluster, sql_query_followers)
 
-    return 1
-    # return df1
+    return res
+
 
 
 def setup_cluster():
