@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
 import csv
-
+import random
 app = Flask(__name__)
 cb_coll = None
 cluster = None
@@ -67,6 +67,7 @@ def index():  # put application's code here
 @app.route('/upload')
 def upload_file():
     csv_import('resources/tweets.csv')
+
     return  "done"
 
 @app.route('/upload_account_new')
@@ -78,6 +79,7 @@ def upload_json_file():
 def csv_import(filename):
     cluster = setup_cluster()
 
+    cb_coll_likes = cluster.bucket(bucket_name).scope("_default").collection("likes")
     try:
         sql_query = "select user_id from Tweets._default.new_accounts order by ARRAY_LENGTH(followers_id) desc limit 100"
         row_iter = cluster.query(
@@ -85,13 +87,26 @@ def csv_import(filename):
         user_list = []
         for row in row_iter:
             user_list.append(row)
+        sql_query = "select user_id from Tweets._default.new_accounts "
+        all_users = lookup_query_list(cluster, sql_query)
+
     except Exception as e:
         return '<h1>' + str(e) + '</h1>'
     with open(filename) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             row["user_id"] = str(user_list[np.random.randint(0, 99)]["user_id"])
-            cb_coll.upsert(str(hash(str(row))), row)
+            likes = int(row["number_of_likes"]) % 500 #MAX Anzahl an user_ids die zur Verfügung stehen
+            liked_by = []
+
+            for ele in random.sample(range(0, likes), likes):
+                liked_by.append(all_users[ele]["user_id"])
+
+            hash_str = str(hash(str(row)))
+            cb_coll.upsert(hash_str, row)
+            row["liked_by"] = liked_by
+            cb_coll_likes.upsert(hash_str, row)
+
 
 
 def json_import(filename):
@@ -165,6 +180,7 @@ def create_index_user():
     index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.new_accounts USING GSI;")
     index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.posts USING GSI;")
     index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.starting_page_cache USING GSI;")
+    index_queries.append("CREATE PRIMARY INDEX `#primary` ON Tweets._default.likes USING GSI;")
 
     for string in index_queries:
 
@@ -212,8 +228,9 @@ def create_collections():
 
     cluster.query("CREATE COLLECTION Tweets._default.new_accounts").rows() 
     cluster.query("CREATE COLLECTION Tweets._default.posts").rows() 
-    cluster.query("CREATE COLLECTION Tweets._default.starting_page_cache").rows() 
-    
+    cluster.query("CREATE COLLECTION Tweets._default.starting_page_cache").rows()
+    cluster.query("CREATE COLLECTION Tweets._default.likes").rows()
+
 
 
 
@@ -332,14 +349,6 @@ def following_top_100():
 
     return render_template('top_100.html', title="page", results_dict=val)
 
-
-    with open('resources/tweets.csv') as csvfile:
-        hash_list = []
-        reader = csv.DictReader(csvfile)
-        for idx, row in enumerate(reader):
-            hash_list.append(hash(str(row)))
-
-        return str(hash_list)
 
 @app.route('/create_post')
 def create_post():
